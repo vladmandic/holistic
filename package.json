@@ -1,41 +1,50 @@
 {
-  "name": "@vladmandic/TEMPLATE",
+  "name": "@vladmandic/holistic",
   "version": "0.1.0",
-  "description": "TEMPLATE",
+  "description": "holistic",
   "sideEffects": false,
   "main": "public/index.js",
   "author": "Vladimir Mandic <mandic00@live.com>",
   "bugs": {
-    "url": "https://github.com/vladmandic/TEMPLATE/issues"
+    "url": "https://github.com/vladmandic/holistic/issues"
   },
-  "homepage": "https://vladmandic.github.io/TEMPLATE/index.html",
+  "homepage": "https://vladmandic.github.io/holistic/index.html",
   "license": "MIT",
   "engines": {
     "node": ">=14.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vladmandic/TEMPLATE.git"
+    "url": "git+https://github.com/vladmandic/holistic.git"
   },
   "scripts": {
     "dev": "build --profile development",
     "prod": "build --profile production",
     "serve": "build --profile serve"
   },
-  "keywords": [],
+  "keywords": [
+    "mediapipe",
+    "holistic"
+  ],
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.31.2",
-    "@typescript-eslint/eslint-plugin": "^5.38.0",
-    "@typescript-eslint/parser": "^5.38.0",
+    "@microsoft/api-extractor": "^7.33.5",
+    "@typescript-eslint/eslint-plugin": "^5.42.0",
+    "@typescript-eslint/parser": "^5.42.0",
     "@vladmandic/build": "^0.7.14",
-    "esbuild": "^0.15.9",
-    "eslint": "8.24.0",
+    "esbuild": "^0.15.12",
+    "eslint": "8.26.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-json": "^3.1.0",
     "tslib": "^2.4.0",
-    "typedoc": "^0.23.15",
-    "typescript": "4.8.3"
+    "typedoc": "^0.23.19",
+    "typescript": "4.8.4"
+  },
+  "dependencies": {
+    "@mediapipe/camera_utils": "^0.3.1640029074",
+    "@mediapipe/control_utils": "^0.6.1629159505",
+    "@mediapipe/drawing_utils": "^0.3.1620248257",
+    "@mediapipe/holistic": "^0.5.1635989137"
   }
 }

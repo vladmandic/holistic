@@ -38,7 +38,7 @@
       "ignoreAnnotations": true,
       "platform": "browser",
       "format": "esm",
-    "banner": { "js": "/*\n  TEMPLATE\n  homepage: <https://github.com/vladmandic/TEMPLATE>\n  author: <https://github.com/vladmandic>'\n*/\n" }
+    "banner": { "js": "/*\n  holistic\n  homepage: <https://github.com/vladmandic/holistic>\n  author: <https://github.com/vladmandic>'\n*/\n" }
     },
     "development": {
       "minify": false

@@ -1,8 +1,9 @@
-# TEMPLATE
+# holistic
 
-## Update:
-- `package.json`: name, description, homepage, issues
-- `.build.json`: banner
-- `index.webmanifest`: name, scope, url
-- `public/index.html`: title, name, description, keywords
+simple implementation of @mediapipe/holistic
 
+## Links:
+
+[starting](https://google.github.io/mediapipe/getting_started/javascript)
+[solution](https://google.github.io/mediapipe/solutions/holistic)
+[github](https://github.com/google/mediapipe)

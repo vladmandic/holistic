@@ -1,7 +1,7 @@
-# @vladmandic/TEMPLATE  
+# @vladmandic/holistic  
 
   Version: **0.1.0**  
-  Description: **TEMPLATE**  
+  Description: **holistic**  
   
   Author: **Vladimir Mandic <mandic00@live.com>**  
   License: **MIT**  
