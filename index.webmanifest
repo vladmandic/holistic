@@ -1,0 +1,17 @@
+{
+  "name": "TEMPLATE",
+  "short_name": "TEMPLATE",
+  "icons": [
+    { "src": "assets/icons/dash-mask.png", "sizes": "853x853", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icons/dash-1024.png", "sizes": "1024x1024", "type": "image/png" },
+    { "src": "assets/icons/dash-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "assets/icons/dash-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "assets/icons/dash-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "assets/icons/dash-64.png", "sizes": "64x64", "type": "image/png" }
+    ],
+  "start_url": "/TEMPLATE/public/index.html",
+  "scope": "/TEMPLATE/public/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000"
+}

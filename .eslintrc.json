@@ -1,0 +1,50 @@
+{
+  "globals": {},
+  "env": {
+      "browser": true,
+      "commonjs": true,
+      "node": true,
+      "es2022": true
+  },
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest"
+  },
+  "plugins": [
+    "@typescript-eslint",
+    "import",
+    "json",
+    "html"
+  ],
+  "extends": [
+    "airbnb-base",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:json/recommended-with-comments",
+    "plugin:import/typescript"
+  ],
+  "ignorePatterns": [
+    "public/*.js"
+  ],
+  "rules": {
+    "max-len": [1, 275, 3],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-unused-vars": "off",
+    "dot-notation":"off",
+    "import/extensions": "off",
+    "import/no-extraneous-dependencies":"off",
+    "import/prefer-default-export": "off",
+    "lines-between-class-members":"off",
+    "no-continue":"off",
+    "no-mixed-operators":"off",
+    "no-nested-ternary":"off",
+    "no-plusplus":"off",
+    "no-param-reassign":"off",
+    "no-restricted-syntax": "off",
+    "object-curly-newline":"off",
+    "prefer-destructuring":"off",
+    "prefer-template":"off",
+    "radix":"off"
+  }
+}

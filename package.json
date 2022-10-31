@@ -1,0 +1,41 @@
+{
+  "name": "@vladmandic/TEMPLATE",
+  "version": "0.1.0",
+  "description": "TEMPLATE",
+  "sideEffects": false,
+  "main": "public/index.js",
+  "author": "Vladimir Mandic <mandic00@live.com>",
+  "bugs": {
+    "url": "https://github.com/vladmandic/TEMPLATE/issues"
+  },
+  "homepage": "https://vladmandic.github.io/TEMPLATE/index.html",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vladmandic/TEMPLATE.git"
+  },
+  "scripts": {
+    "dev": "build --profile development",
+    "prod": "build --profile production",
+    "serve": "build --profile serve"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@microsoft/api-extractor": "^7.31.2",
+    "@typescript-eslint/eslint-plugin": "^5.38.0",
+    "@typescript-eslint/parser": "^5.38.0",
+    "@vladmandic/build": "^0.7.14",
+    "esbuild": "^0.15.9",
+    "eslint": "8.24.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-html": "^7.1.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-json": "^3.1.0",
+    "tslib": "^2.4.0",
+    "typedoc": "^0.23.15",
+    "typescript": "4.8.3"
+  }
+}

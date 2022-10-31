@@ -1,0 +1,65 @@
+{
+  "log": {
+    "enabled": true,
+    "debug": false,
+    "console": true,
+    "output": ""
+  },
+  "profiles": {
+    "production": ["clean", "compile", "typings", "typedoc", "lint", "changelog"],
+    "development": ["serve", "watch", "lint", "compile"],
+    "serve": ["serve"]
+  },
+  "lint": {
+    "locations": [ "*.json", "src/**/*.ts" ],
+    "rules": { }
+  },
+  "clean": {
+    "locations": ["dist/*", "types/lib/*", "typedoc/*"]
+  },
+  "changelog": {
+    "log": "CHANGELOG.md"
+  },
+  "serve": {
+    "sslKey": "node_modules/@vladmandic/build/cert/https.key",
+    "sslCrt": "node_modules/@vladmandic/build/cert/https.crt",
+    "httpPort": 8000,
+    "httpsPort": 8001,
+    "documentRoot": "",
+    "defaultFolder": "public/",
+    "defaultFile": "index.html",
+    "cors": false
+  },
+  "build": {
+    "global": {
+      "target": "es2021",
+      "sourcemap": true,
+      "treeShaking": true,
+      "ignoreAnnotations": true,
+      "platform": "browser",
+      "format": "esm",
+    "banner": { "js": "/*\n  TEMPLATE\n  homepage: <https://github.com/vladmandic/TEMPLATE>\n  author: <https://github.com/vladmandic>'\n*/\n" }
+    },
+    "development": {
+      "minify": false
+    },
+    "production": {
+      "minify": true
+    },
+    "targets": [
+      {
+        "name": "application",
+        "input": "src/index.ts",
+        "output": "dist/index.js",
+        "typings": "types/lib",
+        "typedoc": "typedoc"
+      }
+    ]
+  },
+  "watch": {
+    "locations": [ "src/**/*" ]
+  },
+  "typescript": {
+    "allowJs": false
+  }
+}
