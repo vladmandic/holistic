@@ -41,7 +41,7 @@
     "banner": { "js": "/*\n  holistic\n  homepage: <https://github.com/vladmandic/holistic>\n  author: <https://github.com/vladmandic>'\n*/\n" }
     },
     "development": {
-      "minify": false
+      "minify": true
     },
     "production": {
       "minify": true

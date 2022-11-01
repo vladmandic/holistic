@@ -14,7 +14,6 @@
   <link rel="apple-touch-icon" href="../assets/icons/dash-256.png">
   <link rel="apple-touch-startup-image" href="../assets/icons/dash-256.png">
   <link rel="stylesheet" href="index.css">
-  <link rel="stylesheet" href="mediapipe.css">
   <script type="module" src="../dist/index.js"></script>
 </head>
 <body>
@@ -27,10 +26,11 @@
   </header>
   <main>
     <div id="main" class="main">
-      <div class="container">
-        <video class="input-video"></video>
-        <canvas class="output-canvas"></canvas>
-      </div>
+      <div id="media">
+        <video id="input-video" style="position: fixed; top: 0; left: 0" autoplay loop muted controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture></video>
+        <canvas id="output-overlay" style="position: fixed; bottom: 0; left: 0"></canvas>
+        <canvas id="output-mesh" style="height: 100vh; position: fixed; top: 0; right: 0" width=1920 height=1024></canvas>
+      </div> 
       <div class="control-panel"></div>  
     </div>
   </main>
