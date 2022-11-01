@@ -2,20 +2,23 @@
 html { font-size: 18px; }
 body { font-size: 1rem; font-family: "CenturyGothic", "Segoe UI", sans-serif; font-variant: small-caps; width: -webkit-fill-available; height: 100%; background: black; color: white; overflow-x: hidden; margin: 0; }
 
-.control-panel { position: fixed; right: 20px; top: 20px; }
-.control-panel-entry {width:250px;background-color:darkslategray;box-sizing:content-box;cursor:pointer;display:block;opacity:.8;padding:8px;position:relative;z-index:100}
+.control-panel { position: fixed; right: 20px; top: 20px; box-shadow: 2px 2px 2px black; background-color: darkslategray; opacity: 0.9; padding: 8px; }
+.control-panel-entry {width:250px;box-sizing:content-box;cursor:pointer;display:block;padding:8px;position:relative;z-index:100}
 .control-panel-fps .fps-text {position:absolute;font-size:20px;font-weight:600;text-align:center;backface-visibility:hidden}
 .control-panel-fps {display:flex;justify-content:center;align-items:center}
 .control-panel-fps canvas {height:50px;width:100%;background-color:#222;border-radius:10px;margin-top:5px}
 .control-panel-slider .callout {position:absolute;right:25px}
 .control-panel-slider .value {position:relative;width:100%}
-.control-panel-source-picker .file-selection div {display:flex;align-items:center;justify-items:center}
-.control-panel-source-picker .inputs {display:none}
-.control-panel-source-picker {display:flex;flex-direction:column;align-items:center}
-.control-panel-text {cursor:default;font-size:20px;font-weight:600;text-align:center}
+.control-panel-text {cursor:default;font-size:20px;font-weight:600;padding:0 8px;letter-spacing: 4px}
 .control-panel-toggle .label {position:relative}
-.control-panel-toggle .value {position:absolute;right:25px;padding:2px;width:30px}
-.control-panel-toggle.no .value {background-color:maroon}
-.control-panel-toggle.yes .value {background-color:seagreen}
+.control-panel-toggle .value {position:absolute;right:25px;padding:2px;width:30px;box-shadow: 2px 2px 2px black}
+.control-panel-toggle.no .value {background-color:maroon;color:maroon}
+.control-panel-toggle.yes .value {background-color:seagreen;color:seagreen}
 .fps-30 {position:absolute;font-size:8px;top:45%;left:10px}
 .fps-60 {position:absolute;font-size:8px;top:15%;left:10px}
+
+input[type=range] { height: 20px; appearance: none; margin: 10px 0; width: 100%; }
+input[type=range]:focus { outline: none; }
+input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 20px; cursor: pointer; box-shadow: 2px 2px 2px black; background: #50555C; border-radius: 0; border: 0; }
+input[type=range]::-webkit-slider-thumb { border: 0; height: 20px; width: 40px; background: beige; cursor: pointer; appearance: none; margin-top: 0; }
+input[type=range]:focus::-webkit-slider-runnable-track { background: #50555C; }

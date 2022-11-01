@@ -1,6 +1,9 @@
 import * as drawingUtils from '@mediapipe/drawing_utils';
 import * as h from '@mediapipe/holistic';
 
+let canvas: HTMLCanvasElement;
+let options: Record<string, boolean> = {};
+
 function connectHands(ctx, connector: [h.NormalizedLandmark, h.NormalizedLandmark], width: number, height: number): void {
   const from = connector[0];
   const to = connector[1];
@@ -14,7 +17,15 @@ function connectHands(ctx, connector: [h.NormalizedLandmark, h.NormalizedLandmar
   }
 }
 
-export function draw2D(canvas: HTMLCanvasElement, results: h.Results): void {
+export function initDraw2D(outputCanvas: HTMLCanvasElement) {
+  canvas = outputCanvas;
+}
+
+export function setDraw2dOptions(newOptions) {
+  options = Object.assign(options, newOptions);
+}
+
+export function draw2D(results: h.Results): void {
   // Draw the overlays.
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   ctx.save();

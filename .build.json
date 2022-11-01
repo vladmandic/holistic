@@ -32,7 +32,7 @@
   },
   "build": {
     "global": {
-      "target": "es2021",
+      "target": "es2020",
       "sourcemap": true,
       "treeShaking": true,
       "ignoreAnnotations": true,
