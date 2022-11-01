@@ -6,7 +6,7 @@
     "output": ""
   },
   "profiles": {
-    "production": ["clean", "compile", "typings", "typedoc", "lint", "changelog"],
+    "production": ["clean", "compile", "lint", "changelog"],
     "development": ["serve", "watch", "lint", "compile"],
     "serve": ["serve"]
   },
@@ -40,19 +40,12 @@
       "format": "esm",
     "banner": { "js": "/*\n  holistic\n  homepage: <https://github.com/vladmandic/holistic>\n  author: <https://github.com/vladmandic>'\n*/\n" }
     },
-    "development": {
-      "minify": true
-    },
-    "production": {
-      "minify": true
-    },
     "targets": [
       {
         "name": "application",
         "input": "src/index.ts",
         "output": "dist/index.js",
-        "typings": "types/lib",
-        "typedoc": "typedoc"
+        "minify": true
       }
     ]
   },

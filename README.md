@@ -3,6 +3,10 @@
 Holisting end-to-end detection and visualization of of body pose, hands with fingers, and face mesh  
 Provided as both 2D overlay and fully reconstructed 3D scene  
 
+- [**Live link**](https://vladmandic.github.io/holistic/public/index.html)
+
+<br>
+
 ## Notes
 
 Written in **TypeScript** and transpiled to **JavaScript ECMAScript2020** using `@vladmandic/build` CI tool
@@ -37,4 +41,3 @@ DATA:  HTTPS: { method: 'GET', ver: '2.0', status: 200, mime: 'text/html', size:
 
 - Support for video input
 - Readme screenshots
-- Live demo
