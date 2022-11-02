@@ -4,6 +4,7 @@ import * as h from '@mediapipe/holistic';
 let canvas: HTMLCanvasElement;
 let options: Record<string, boolean> = {};
 
+/*
 function connectHands(ctx, connector: [h.NormalizedLandmark, h.NormalizedLandmark], width: number, height: number): void {
   const from = connector[0];
   const to = connector[1];
@@ -16,6 +17,7 @@ function connectHands(ctx, connector: [h.NormalizedLandmark, h.NormalizedLandmar
     ctx.stroke();
   }
 }
+*/
 
 export function initDraw2D(outputCanvas: HTMLCanvasElement) {
   canvas = outputCanvas;
@@ -36,8 +38,8 @@ export function draw2D(results: h.Results): void {
   ctx.restore();
 
   // Connect elbows to hands...
-  if (results.poseLandmarks && results.rightHandLandmarks) connectHands(ctx, [results.poseLandmarks[h.POSE_LANDMARKS.RIGHT_ELBOW], results.rightHandLandmarks[0]], canvas.width, canvas.height);
-  if (results.poseLandmarks && results.leftHandLandmarks) connectHands(ctx, [results.poseLandmarks[h.POSE_LANDMARKS.LEFT_ELBOW], results.leftHandLandmarks[0]], canvas.width, canvas.height);
+  // if (results.poseLandmarks && results.rightHandLandmarks) connectHands(ctx, [results.poseLandmarks[h.POSE_LANDMARKS.RIGHT_ELBOW], results.rightHandLandmarks[0]], canvas.width, canvas.height);
+  // if (results.poseLandmarks && results.leftHandLandmarks) connectHands(ctx, [results.poseLandmarks[h.POSE_LANDMARKS.LEFT_ELBOW], results.leftHandLandmarks[0]], canvas.width, canvas.height);
 
   // Pose...
   drawingUtils.drawConnectors(ctx, results.poseLandmarks, h.POSE_CONNECTIONS, { color: 'white' });

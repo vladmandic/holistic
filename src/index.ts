@@ -20,9 +20,11 @@ let options = {
   renderBones: true,
   renderJoints: true,
   renderHands: true,
+  renderSurface: true,
   connectHands: true,
   deleteDuplicates: true,
   fixedRadius: true,
+  lerpAmount: 0,
 };
 
 // instance of holistic model
@@ -41,7 +43,7 @@ const dom = {
     new controls.Toggle({ title: 'refineFaceLandmarks', field: 'refineFaceLandmarks' }),
     new controls.Slider({ title: 'minDetectionConfidence', field: 'minDetectionConfidence', range: [0, 1], step: 0.01 }),
     new controls.Slider({ title: 'minTrackingConfidence', field: 'minTrackingConfidence', range: [0, 1], step: 0.01 }),
-    new controls.Slider({ title: 'modelComplexity', field: 'modelComplexity', discrete: ['Lite', 'Full', 'Heavy'] }),
+    new controls.Slider({ title: 'modelComplexity', field: 'modelComplexity', discrete: ['lite', 'full', 'heavy'] }),
     new controls.StaticText({ title: 'render' }),
     new controls.Toggle({ title: 'showInspector', field: 'showInspector' }),
     new controls.Toggle({ title: 'renderFace', field: 'renderFace' }),
@@ -50,9 +52,11 @@ const dom = {
     new controls.Toggle({ title: 'renderBones', field: 'renderBones' }),
     new controls.Toggle({ title: 'renderJoints', field: 'renderJoints' }),
     new controls.Toggle({ title: 'renderHands', field: 'renderHands' }),
+    new controls.Toggle({ title: 'renderSurface', field: 'renderSurface' }),
     new controls.Toggle({ title: 'connectHands', field: 'connectHands' }),
     new controls.Toggle({ title: 'deleteDuplicates', field: 'deleteDuplicates' }),
     new controls.Toggle({ title: 'fixedRadius', field: 'fixedRadius' }),
+    new controls.Slider({ title: 'lerpAmount', field: 'lerpAmount', range: [0, 1], step: 0.01 }),
   ],
 };
 
@@ -91,7 +95,7 @@ async function main() {
   await initDraw2D(dom.overlay);
   await initDraw3D(dom.mesh, options);
   await holistic.initialize();
-  log('holistic', h.VERSION);
+  log('holistic', { version: h.VERSION });
   holistic.onResults(onResults); // register callback
 
   dom.webcam.onplay = () => {

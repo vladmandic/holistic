@@ -11,7 +11,6 @@ export class Scene {
   materialBone: M.PBRCustomMaterial;
   materialJoint: M.PBRCustomMaterial;
   materialHead: M.PBRCustomMaterial;
-  materialFlat: B.StandardMaterial;
   pipeline: B.DefaultRenderingPipeline;
   highlight: B.HighlightLayer;
   camera: B.ArcRotateCamera;
@@ -26,7 +25,17 @@ export class Scene {
   constructor(outputCanvas: HTMLCanvasElement) {
     this.canvas = outputCanvas;
     // engine & scene
-    this.engine = new B.Engine(this.canvas, true, { preserveDrawingBuffer: true, stencil: true, disableWebGL2Support: false, doNotHandleContextLost: true });
+    this.engine = new B.Engine(this.canvas, true, {
+      preserveDrawingBuffer: true,
+      stencil: true,
+      disableWebGL2Support: false,
+      doNotHandleContextLost: true,
+      autoEnableWebVR: false,
+      audioEngine: false,
+      useHighPrecisionFloats: false,
+      useHighPrecisionMatrix: false,
+      failIfMajorPerformanceCaveat: false,
+    });
     this.engine.enableOfflineSupport = false;
     B.Animation.AllowMatricesInterpolation = true;
     this.scene = new B.Scene(this.engine);
@@ -40,12 +49,14 @@ export class Scene {
     this.materialHead.emissiveColor = B.Color3.FromHexString('#000000');
     this.materialHead.iridescence.isEnabled = true;
     this.materialHead.backFaceCulling = false;
+    this.materialHead.freeze();
     this.materialBone = new M.PBRCustomMaterial('bone', this.scene);
     this.materialBone.metallic = 1.0;
     this.materialBone.roughness = 0.4;
     this.materialBone.alpha = 1.0;
     this.materialBone.albedoColor = B.Color3.FromHexString('#B1ECFF');
     this.materialBone.iridescence.isEnabled = true;
+    this.materialBone.freeze();
     // this.materialBone.getAlphaTestTexture
     this.materialJoint = new M.PBRCustomMaterial('joint', this.scene);
     this.materialJoint.metallic = 1.0;
@@ -53,11 +64,7 @@ export class Scene {
     this.materialJoint.alpha = 0.5;
     this.materialJoint.albedoColor = B.Color3.FromHexString('#FFFFFF');
     this.materialJoint.iridescence.isEnabled = true;
-    this.materialFlat = new B.StandardMaterial('flat', this.scene);
-    this.materialFlat.diffuseColor = B.Color3.FromHexString('#ACFFFF');
-    this.materialFlat.backFaceCulling = false;
-    // start scene
-    this.engine.runRenderLoop(() => this.scene.render());
+    this.materialJoint.freeze();
     // camera
     this.camera = new B.ArcRotateCamera('camera', 0, 0, 1, new B.Vector3(1, 0, 0), this.scene);
     this.camera.attachControl(this.canvas, false);
@@ -85,7 +92,7 @@ export class Scene {
     if (this.environment.skybox) this.environment.skybox.name = 'skybox';
     if (this.environment.ground?.material) this.environment.ground.material.name = 'ground';
     if (this.environment.skybox?.material) this.environment.skybox.material.name = 'skybox';
-    // lights
+    // lights & shadows
     this.ambient = new B.HemisphericLight('spheric', new B.Vector3(0, 1, 0), this.scene);
     this.ambient.intensity = 0.5;
     this.ambient.specular = B.Color3.Black();
@@ -103,11 +110,13 @@ export class Scene {
     // rendering pipeline
     this.highlight = new B.HighlightLayer('highlight', this.scene);
     this.pipeline = new B.DefaultRenderingPipeline('pipeline', true, this.scene, [this.camera], true);
+    this.scene.performancePriority = B.ScenePerformancePriority.BackwardCompatible;
+    this.scene.autoClear = false;
+    // start scene
+    this.engine.runRenderLoop(() => this.scene.render());
     // @ts-ignore
     window.t = this;
-    log(`engine: babylonjs ${B.Engine.Version}`);
     // @ts-ignore
-    log(`renderer: ${this.engine._glRenderer.toLowerCase()}`); // eslint-disable-line no-underscore-dangle
-    log('gpu acceleration:', B.GPUParticleSystem.IsSupported);
+    log('babylonjs', { version: B.Engine.Version, engine: this.engine.name, renderer: this.engine._glRenderer.toLowerCase(), gpu: B.GPUParticleSystem.IsSupported }); // eslint-disable-line no-underscore-dangle
   }
 }

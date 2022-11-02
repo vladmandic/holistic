@@ -9,114 +9,129 @@ let meshes: Record<string, B.Mesh | B.AbstractMesh> = {};
 let faceVertexData: B.VertexData | undefined;
 let previousSmooth = false;
 
-let options: Record<string, boolean> = {};
+let options: Record<string, boolean | number> = {};
+
+class Data {
+  pos: Record<string, B.Vector3> = {};
+  newPos: Record<string, B.Vector3> = {};
+  path: Record<string, B.Vector3[]> = {};
+  newPath: Record<string, B.Vector3[]> = {};
+  radius: Record<string, number> = {};
+
+  interpolate() {
+    for (const key of Object.keys(this.newPos)) {
+      if ((options.lerpAmount === 0) || !this.pos[key]) this.pos[key] = this.newPos[key];
+      else this.pos[key] = B.Vector3.Lerp(this.pos[key], this.newPos[key], (options.lerpAmount as number));
+    }
+    for (const key of Object.keys(this.newPath)) {
+      if ((options.lerpAmount === 0) || !this.path[key]) this.path[key] = this.newPath[key];
+      else {
+        for (let i = 0; i < this.newPath[key].length; i++) {
+          this.path[key][i] = B.Vector3.Lerp(this.path[key][i], this.newPath[key][i], (options.lerpAmount as number));
+        }
+      }
+    }
+  }
+
+  draw() {
+    for (const key of Object.keys(this.path)) {
+      meshes[key] = B.MeshBuilder.CreateTube(key, { path: this.path[key], radius: this.radius[key], updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[key] as B.Mesh }, t.scene);
+    }
+    for (const key of Object.keys(this.pos)) {
+      meshes[key].position = this.pos[key];
+    }
+  }
+}
+const data = new Data();
 
 const log = (...msg) => console.log(...msg); // eslint-disable-line no-console
 
-export function initDraw3D(canvasOutput: HTMLCanvasElement, newOptions) {
-  if (!t) t = new Scene(canvasOutput);
-  for (const mesh of Object.values(meshes)) mesh.dispose();
-  meshes = {};
-  options = Object.assign(options, newOptions);
-  log('initScene', t);
-}
-
-export function setDraw3dOptions(newOptions) {
-  options = Object.assign(options, newOptions);
-  if (!t?.scene) return;
-  if (newOptions.showInspector) t.scene.debugLayer.show({ embedMode: true, overlay: true, showExplorer: true, showInspector: true, handleResize: true, enablePopup: false, enableClose: false });
-  else t.scene.debugLayer.hide();
-  const inspector = document.getElementById('embed-host');
-  if (inspector) inspector.style.cssText = 'left: 0; width: fit-content';
-}
+const vec = (landmark: h.NormalizedLandmark) => new B.Vector3(landmark?.x || 0, 1 - (landmark?.y || 0), landmark?.z || 0);
 
 const pathLength = (path: Array<B.Vector3>): number => Math.abs(B.Vector3.Distance(path[0], path[path.length - 1]) * 0.1);
 
-const drawPath = (parent: string, desc: string, path: Array<B.Vector3>, visibility: number, diameter: number) => {
-  if (!options.fixedRadius) diameter = 0.75 * pathLength(path) + 0.01;
+const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility: number, diameter: number) => {
   if (!meshes[parent]) meshes[parent] = new B.AbstractMesh(parent, t.scene);
-  if (!meshes[parent + desc]) { // pose part seen for the first time
-    meshes[parent + desc] = B.MeshBuilder.CreateTube(parent + desc, { path, radius: diameter / 2, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE }, t.scene); // create new tube
-    meshes[parent + desc].material = t.materialBone;
-    meshes[parent + desc].parent = meshes[parent];
+  const createBone = (name: string) => {
+    meshes[name] = B.MeshBuilder.CreateTube(name, { path: newPath, radius: diameter / 2, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE }, t.scene); // create new tube
+    meshes[name].material = t.materialBone;
+    meshes[name].parent = meshes[parent];
     t.shadows.addShadowCaster(meshes[parent + desc], false); // add shadow to new tube
-    for (let i = 0; i < path.length; i++) {
-      meshes[parent + desc + i] = B.MeshBuilder.CreateSphere(parent + desc + i, { diameter: 1 }, t.scene); // rounded edge for path // diameter is fixed and we change scale later
-      meshes[parent + desc + i].material = t.materialJoint;
-      meshes[parent + desc + i].parent = meshes[parent];
-      meshes[parent + desc + i].renderingGroupId = 1;
-      // t.shadows.addShadowCaster(meshes[parent + desc + i], false);
-    }
+  };
+  const createJoint = (name: string) => {
+    meshes[name] = B.MeshBuilder.CreateSphere(name, { diameter: 1 }, t.scene); // rounded edge for path // diameter is fixed and we change scale later
+    meshes[name].material = t.materialJoint;
+    meshes[name].parent = meshes[parent];
+    meshes[name].renderingGroupId = 1;
+    meshes[name].scaling = new B.Vector3(1.1 * diameter, 1.1 * diameter, 1.1 * diameter); // make joints slightly larger than bones
+  };
+
+  data.newPath[parent + desc] = newPath;
+  const path = data.path[parent + desc] || data.newPath[parent + desc];
+
+  data.radius[parent + desc] = (!options.fixedRadius ? diameter = 0.75 * pathLength(path) + 0.01 : diameter) / 2;
+  if (!meshes[parent + desc]) { // pose part seen for the first time
+    createBone(parent + desc);
+    for (let i = 0; i < path.length; i++) createJoint(parent + desc + i);
   }
-  if (visibility > 0) meshes[parent + desc] = B.MeshBuilder.CreateTube(parent + desc, { path, radius: diameter / 2, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[parent + desc] as B.Mesh }, t.scene); // update existing tube
-  meshes[parent + desc].visibility = options.renderBones ? visibility : 0;
-  meshes[parent + desc].setEnabled(visibility > 0);
+  meshes[parent + desc].visibility = visibility;
+  meshes[parent + desc].setEnabled(options.renderJoints ? (visibility > 0) : false);
   for (let i = 0; i < path.length; i++) { // update path endpoints
-    if (visibility > 0) {
-      meshes[parent + desc + i].position = path[i];
-      meshes[parent + desc + i].scaling = new B.Vector3(1.1 * diameter, 1.1 * diameter, 1.1 * diameter); // make joints slightly larger than bones
-    }
-    meshes[parent + desc + i].visibility = options.renderJoints ? visibility : 0;
-    meshes[parent + desc + i].setEnabled(visibility > 0);
+    const jointName = parent + desc + i;
+    data.newPos[jointName] = path[i];
+    meshes[jointName].visibility = visibility;
+    meshes[jointName].setEnabled(options.renderJoints ? (visibility > 0) : false);
   }
 };
 
-async function drawPolygon(parent: string, desc: string, result: h.NormalizedLandmarkList, idx: [number, number][], visibility: number) {
+async function drawRibbon(parent: string, desc: string, path: B.Vector3[][], visibility: number) {
   if (!meshes[parent]) meshes[parent] = new B.AbstractMesh(parent, t.scene);
-  const points: h.NormalizedLandmark[] = [];
-  for (const i of idx) {
-    const v0 = result?.[i?.[0]] || 0;
-    const v1 = result?.[i?.[1]] || 0;
-    if (!v0 || !v1) visibility = 0;
-    points.push(v0, v1);
+  const name = parent + '-' + desc;
+  if (!meshes[name]) {
+    meshes[name] = B.MeshBuilder.CreateRibbon(name, { pathArray: path, closeArray: false, closePath: false, updatable: true, sideOrientation: B.Mesh.DOUBLESIDE }, t.scene);
+    meshes[name].parent = meshes[parent];
+    meshes[name].material = t.materialBone;
+    meshes[name].receiveShadows = true;
+    t.shadows.addShadowCaster(meshes[name], false);
   }
-  if (idx.length < 3) points.push(...points, ...points, ...points); // create triangles
-  const positions = points.map((pt) => [pt.x, 1 - pt.y, pt.z]).flat();
-  if (!meshes[parent + desc]) {
-    meshes[parent + desc] = new B.Mesh(parent + desc, t.scene);
-    meshes[parent + desc].parent = meshes[parent];
-    meshes[parent + desc].material = t.materialFlat;
-    // t.shadows.addShadowCaster(meshes[parent + desc], false);
-    const indices: number[] = [];
-    const normals = [];
-    for (let i = 0; i < positions.length / 3; i++) indices.push(i);
-    const vertexData = new B.VertexData();
-    B.VertexData.ComputeNormals(positions, indices, normals);
-    vertexData.positions = positions;
-    vertexData.indices = indices;
-    vertexData.normals = normals;
-    vertexData.applyToMesh(meshes[parent + desc] as B.Mesh, true);
-  }
-  meshes[parent + desc].updateVerticesData(B.VertexBuffer.PositionKind, positions, true);
-  meshes[parent + desc].visibility = visibility;
-  meshes[parent + desc].setEnabled(visibility > 0);
+  meshes[name] = B.MeshBuilder.CreateRibbon(name, { pathArray: path, closeArray: false, closePath: false, updatable: true, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[name] as B.Mesh }, t.scene);
+  meshes[name].visibility = visibility;
+  meshes[name].setEnabled(options.renderSurface ? (visibility > 0) : false);
 }
 
 async function drawTorso(result: h.NormalizedLandmarkList) {
-  const visibility = options.renderBones ? 0.4 : 0;
-  drawPolygon('pose', 'torso', result, [h.POSE_CONNECTIONS[22], h.POSE_CONNECTIONS[23]], visibility);
+  const visibility = options.renderBones ? 0.8 : 0;
+  const verticals = [ // torso
+    [vec(result?.[h.POSE_LANDMARKS.LEFT_SHOULDER]), vec(result?.[h.POSE_LANDMARKS.LEFT_HIP])],
+    [vec(result?.[h.POSE_LANDMARKS.RIGHT_SHOULDER]), vec(result?.[h.POSE_LANDMARKS.RIGHT_HIP])],
+  ];
+  drawRibbon('pose', 'torso', verticals, visibility);
 }
 
-async function drawPose(result: h.NormalizedLandmarkList) {
+async function createPose(result: h.NormalizedLandmarkList) {
   for (let i = 0; i < h.POSE_CONNECTIONS.length; i++) {
     const v0 = result?.[h.POSE_CONNECTIONS[i]?.[0]];
     const v1 = result?.[h.POSE_CONNECTIONS[i]?.[1]];
-    const path = [new B.Vector3(v0?.x || 0, 1 - (v0?.y || 0), v0?.z || 0), new B.Vector3(v1?.x || 0, 1 - (v1?.y || 0), v1?.z || 0)];
+    const path = [vec(v0), vec(v1)];
     const visibility = Math.min(v0?.visibility || 0, v1?.visibility || 0);
     drawPath('pose', `-${i}-`, path, visibility, 0.08);
   }
 }
 
 async function drawPalm(result: h.NormalizedLandmarkList, which: 'left' | 'right') {
-  const visibility = options.renderHands ? 0.4 : 0;
-  drawPolygon(`hand-${which}`, 'palm', result, [h.HAND_CONNECTIONS[4], h.HAND_CONNECTIONS[17]], visibility);
+  const visibility = (options.renderHands && result?.[0] && result?.[5] && result?.[17]) ? 0.4 : 0;
+  const verticals = [ // palm triangle
+    [vec(result?.[0]), vec(result?.[5])],
+    [vec(result?.[0]), vec(result?.[17])],
+  ];
+  drawRibbon(`hand-${which}`, 'palm', verticals, visibility);
 }
 
-async function drawHand(result: h.NormalizedLandmarkList, which: 'left' | 'right') {
+async function createHand(result: h.NormalizedLandmarkList, which: 'left' | 'right') {
   for (let i = 0; i < h.HAND_CONNECTIONS.length; i++) {
     const v0 = result?.[h.HAND_CONNECTIONS[i]?.[0]];
     const v1 = result?.[h.HAND_CONNECTIONS[i]?.[1]];
-    const path = [new B.Vector3(v0?.x || 0, 1 - (v0?.y || 0), v0?.z || 0), new B.Vector3(v1?.x || 0, 1 - (v1?.y || 0), v1?.z || 0)];
+    const path = [vec(v0), vec(v1)];
     const visibility = (v0 && v1 && options.renderHands) ? 1 : 0;
     drawPath(`hand-${which}`, `-${i}-`, path, visibility, 0.04);
   }
@@ -129,7 +144,7 @@ async function drawFace(result: h.NormalizedLandmarkList) {
   }
   if (previousSmooth !== options.smoothFace) {
     if (meshes.face && !meshes.face.isDisposed()) meshes.face.dispose();
-    previousSmooth = options.smoothFace;
+    previousSmooth = options.smoothFace as boolean;
   }
   if (!meshes.face || meshes.face.isDisposed()) { // create new face
     meshes.face = new B.Mesh('face', t.scene);
@@ -137,11 +152,11 @@ async function drawFace(result: h.NormalizedLandmarkList) {
     meshes.face.material = t.materialHead;
     meshes.face.material['roughness'] = options.smoothFace ? 0.25 : 0.65;
     meshes.face.material['metallic'] = options.smoothFace ? 1.0 : 0.65;
+    meshes.face.alwaysSelectAsActiveMesh = true;
     faceVertexData = undefined;
   }
   meshes.face.visibility = 1;
 
-  // use fixed size since iris does not have defined uvmap
   const positions = new Float32Array(3 * 468);
   for (let i = 0; i < 468; i++) { // flatten and invert-y
     positions[3 * i + 0] = result[i].x; // x
@@ -170,24 +185,12 @@ async function drawFace(result: h.NormalizedLandmarkList) {
 async function repositionHands(result: h.NormalizedLandmarkList) {
   if (meshes['hand-right']) {
     const wrist = result?.[h.POSE_LANDMARKS.RIGHT_WRIST];
-    meshes['hand-right'].position = new B.Vector3(0, 0, options.connectHands ? (wrist?.z || 0) : 0);
+    data.newPos['hand-right'] = options.connectHands ? new B.Vector3(0, 0, wrist?.z || 0) : new B.Vector3(0, 0, 0);
   }
   if (meshes['hand-left']) {
     const wrist = result?.[h.POSE_LANDMARKS.LEFT_WRIST];
-    meshes['hand-left'].position = new B.Vector3(0, 0, options.connectHands ? (wrist?.z || 0) : 0);
+    data.newPos['hand-left'] = options.connectHands ? new B.Vector3(0, 0, wrist?.z || 0) : new B.Vector3(0, 0, 0);
   }
-  /*
-  let v0 = results.poseLandmarks?.[h.POSE_LANDMARKS.RIGHT_ELBOW];
-  let v1 = results.rightHandLandmarks?.[0];
-  let path = [new B.Vector3(v0?.x || 0, 1 - (v0?.y || 0), v0?.z || 0), new B.Vector3(v1?.x || 0, 1 - (v1?.y || 0), v1?.z || 0 + meshes['hand-right'].position.z)];
-  let visibility = results.poseLandmarks?.[h.POSE_LANDMARKS.RIGHT_ELBOW] && results.rightHandLandmarks?.[0] ? v0?.visibility || 0 : 0;
-  drawPath('connect', 'right', path, visibility, 0.1);
-  v0 = results.poseLandmarks?.[h.POSE_LANDMARKS.LEFT_ELBOW];
-  v1 = results.leftHandLandmarks?.[0];
-  path = [new B.Vector3(v0?.x || 0, 1 - (v0?.y || 0), v0?.z || 0), new B.Vector3(v1?.x || 0, 1 - (v1?.y || 0), v1?.z || 0)];
-  visibility = results.poseLandmarks?.[h.POSE_LANDMARKS.LEFT_ELBOW] && results.leftHandLandmarks?.[0] ? v0?.visibility || 0 : 0;
-  drawPath('connect', 'left', path, visibility, 0.06);
-  */
 }
 
 async function repositionFace(result: h.NormalizedLandmarkList) {
@@ -197,15 +200,40 @@ async function repositionFace(result: h.NormalizedLandmarkList) {
   const centerShouldersVec = meshes['pose-9-'].getBoundingInfo().boundingBox.center;
   noseVec.addInPlace(centerShouldersVec);
   noseVec.divideInPlace(new B.Vector3(2, 2, 4));
-  meshes['face'].position = new B.Vector3(0, 0, options.connectFace ? noseVec.z : 0);
+  data.newPos['face'] = new B.Vector3(0, 0, options.connectFace ? noseVec.z : 0);
   drawPath('neck', 'line', [noseVec, centerShouldersVec], 1, 0.1);
 }
 
+function performRender() {
+  data.interpolate();
+  data.draw();
+}
+
+export function setDraw3dOptions(newOptions) {
+  options = Object.assign(options, newOptions);
+  if (!t?.scene) return;
+  if (newOptions.showInspector) t.scene.debugLayer.show({ embedMode: true, overlay: true, showExplorer: true, showInspector: true, handleResize: true, enablePopup: false, enableClose: false });
+  else t.scene.debugLayer.hide();
+  const inspector = document.getElementById('embed-host');
+  if (inspector) inspector.style.cssText = 'left: 0; width: fit-content';
+}
+
+export function initDraw3D(canvasOutput: HTMLCanvasElement, newOptions) {
+  if (!t) t = new Scene(canvasOutput);
+  for (const mesh of Object.values(meshes)) mesh.dispose();
+  meshes = {};
+  setDraw3dOptions(newOptions);
+  t.scene.registerBeforeRender(() => performRender());
+  log('initScene', t);
+  setInterval(() => log('rendering', { averageFps: t.engine.performanceMonitor.averageFPS }), 5000);
+  // setInterval(() => t.scene.render(), 200);
+}
+
 export async function draw3D(results: h.Results) {
-  drawPose(results.poseLandmarks);
+  createPose(results.poseLandmarks);
   drawTorso(results.poseLandmarks);
-  drawHand(results.leftHandLandmarks, 'left');
-  drawHand(results.rightHandLandmarks, 'right');
+  createHand(results.leftHandLandmarks, 'left');
+  createHand(results.rightHandLandmarks, 'right');
   drawPalm(results.leftHandLandmarks, 'left');
   drawPalm(results.rightHandLandmarks, 'right');
   repositionHands(results.poseLandmarks);
