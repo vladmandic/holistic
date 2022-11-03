@@ -8,9 +8,7 @@ export class Scene {
   engine: B.Engine;
   canvas: HTMLCanvasElement;
   scene: B.Scene;
-  materialBone: M.PBRCustomMaterial;
-  materialJoint: M.PBRCustomMaterial;
-  materialHead: M.PBRCustomMaterial;
+  material: M.PBRCustomMaterial;
   pipeline: B.DefaultRenderingPipeline;
   highlight: B.HighlightLayer;
   camera: B.ArcRotateCamera;
@@ -40,31 +38,15 @@ export class Scene {
     B.Animation.AllowMatricesInterpolation = true;
     this.scene = new B.Scene(this.engine);
     this.scene.clearCachedVertexData();
-    // materials
-    this.materialHead = new M.PBRCustomMaterial('head', this.scene);
-    this.materialHead.metallic = 1.0;
-    this.materialHead.roughness = 0.65;
-    this.materialHead.alpha = 1.0;
-    this.materialHead.albedoColor = B.Color3.FromHexString('#91ECFF');
-    this.materialHead.emissiveColor = B.Color3.FromHexString('#000000');
-    this.materialHead.iridescence.isEnabled = true;
-    this.materialHead.backFaceCulling = false;
-    this.materialHead.freeze();
-    this.materialBone = new M.PBRCustomMaterial('bone', this.scene);
-    this.materialBone.metallic = 1.0;
-    this.materialBone.roughness = 0.4;
-    this.materialBone.alpha = 1.0;
-    this.materialBone.albedoColor = B.Color3.FromHexString('#B1ECFF');
-    this.materialBone.iridescence.isEnabled = true;
-    this.materialBone.freeze();
-    // this.materialBone.getAlphaTestTexture
-    this.materialJoint = new M.PBRCustomMaterial('joint', this.scene);
-    this.materialJoint.metallic = 1.0;
-    this.materialJoint.roughness = 0.0;
-    this.materialJoint.alpha = 0.5;
-    this.materialJoint.albedoColor = B.Color3.FromHexString('#FFFFFF');
-    this.materialJoint.iridescence.isEnabled = true;
-    this.materialJoint.freeze();
+    this.material = new M.PBRCustomMaterial('material', this.scene);
+    this.material.metallic = 1.0;
+    this.material.roughness = 0.15;
+    this.material.alpha = 1.0;
+    this.material.metallicF0Factor = 0;
+    this.material.albedoColor = B.Color3.FromHexString('#FFF4B8');
+    this.material.useRadianceOcclusion = false;
+    this.material.directIntensity = 0;
+    // this.materialJoint.freeze();
     // camera
     this.camera = new B.ArcRotateCamera('camera', 0, 0, 1, new B.Vector3(1, 0, 0), this.scene);
     this.camera.attachControl(this.canvas, false);

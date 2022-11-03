@@ -27,8 +27,8 @@
   <main>
     <div id="main" class="main">
       <div id="media">
-        <video id="input-video" style="position: fixed; top: 0; left: 0" autoplay loop muted controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture></video>
-        <canvas id="output-overlay" style="position: fixed; bottom: 0; left: 0"></canvas>
+        <video id="input-video" style="position: fixed; top: 0; left: 0; z-index: 10; height: 50vh; visibility: hidden;" autoplay loop muted controls controlslist="nofullscreen nodownload noremoteplayback" disablepictureinpicture></video>
+        <canvas id="output-overlay" style="position: fixed; bottom: 0; left: 0; height: 50vh; z-index: 10"></canvas>
         <canvas id="output-mesh" style="height: 100vh; position: fixed; top: 0; right: 0" width=1920 height=1024></canvas>
       </div> 
       <div class="control-panel"></div>  

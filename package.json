@@ -29,13 +29,13 @@
     "holistic"
   ],
   "devDependencies": {
-    "@babylonjs/core": "^5.30.0",
-    "@babylonjs/gui": "^5.30.0",
-    "@babylonjs/gui-editor": "^5.30.0",
-    "@babylonjs/inspector": "^5.30.0",
-    "@babylonjs/loaders": "^5.30.0",
-    "@babylonjs/materials": "^5.30.0",
-    "@babylonjs/serializers": "^5.30.0",
+    "@babylonjs/core": "^5.31.0",
+    "@babylonjs/gui": "^5.31.0",
+    "@babylonjs/gui-editor": "^5.31.0",
+    "@babylonjs/inspector": "^5.31.0",
+    "@babylonjs/loaders": "^5.31.0",
+    "@babylonjs/materials": "^5.31.0",
+    "@babylonjs/serializers": "^5.31.0",
     "@mediapipe/control_utils": "^0.6.1629159505",
     "@mediapipe/drawing_utils": "^0.3.1620248257",
     "@mediapipe/holistic": "^0.5.1635989137",
@@ -44,14 +44,14 @@
     "@typescript-eslint/parser": "^5.42.0",
     "@vladmandic/build": "^0.7.14",
     "earcut": "^2.2.4",
-    "esbuild": "^0.15.12",
+    "esbuild": "^0.15.13",
     "eslint": "8.26.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-html": "^7.1.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-json": "^3.1.0",
     "tslib": "^2.4.1",
-    "typedoc": "^0.23.19",
+    "typedoc": "^0.23.20",
     "typescript": "4.8.4"
   }
 }
