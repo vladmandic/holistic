@@ -1,0 +1,38 @@
+export const options = {
+  // model options
+  useCpuInference: false,
+  modelComplexity: 0,
+  smoothLandmarks: true,
+  refineFaceLandmarks: true,
+  enableFaceGeometry: false,
+  minDetectionConfidence: 0.1,
+  minTrackingConfidence: 0.3,
+  // render options
+  showInspector: false,
+  renderFace: true,
+  connectFace: true,
+  smoothFace: false,
+  renderBones: true,
+  renderJoints: true,
+  renderHands: true,
+  renderSurface: true,
+  connectHands: true,
+  deleteDuplicates: true,
+  fixedRadius: true,
+  baseRadius: 0.03,
+  lerpAmount: 0,
+  scaleX: 1,
+  scaleY: 1,
+  scaleZ: 0.5,
+  continousFocus: true,
+  // sources
+  activeSource: 'none',
+  sources: [
+    { name: 'none', value: 'none' },
+    { name: 'webcam', value: 'webcam' },
+    { name: 'face', value: '../assets/samples/face.webm' },
+    { name: 'streching', value: '../assets/samples/streching.webm' },
+    { name: 'yoga', value: '../assets/samples/yoga.webm' },
+    { name: 'swimwear', value: '../assets/samples/swimwear.webm' },
+  ],
+};

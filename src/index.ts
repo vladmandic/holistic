@@ -1,47 +1,10 @@
 import * as controls from '@mediapipe/control_utils';
 import * as h from '@mediapipe/holistic';
+import { options } from './options';
+import { log } from './util';
 import { video } from './video';
 import { initDraw2D, draw2D, setDraw2dOptions } from './draw2d';
 import { initDraw3D, draw3D, setDraw3dOptions } from './draw3d';
-
-let options = {
-  // model options
-  useCpuInference: false,
-  modelComplexity: 0,
-  smoothLandmarks: true,
-  refineFaceLandmarks: true,
-  enableFaceGeometry: false,
-  minDetectionConfidence: 0.1,
-  minTrackingConfidence: 0.3,
-  // render options
-  showInspector: false,
-  renderFace: true,
-  connectFace: true,
-  smoothFace: false,
-  renderBones: true,
-  renderJoints: true,
-  renderHands: true,
-  renderSurface: true,
-  connectHands: true,
-  deleteDuplicates: true,
-  fixedRadius: true,
-  baseRadius: 0.04,
-  lerpAmount: 0,
-  scaleX: 1,
-  scaleY: 1,
-  scaleZ: 0.5,
-  continousFocus: true,
-  // sources
-  activeSource: 'none',
-  sources: [
-    { name: 'none', value: 'none' },
-    { name: 'webcam', value: 'webcam' },
-    { name: 'face', value: '../assets/samples/face.webm' },
-    { name: 'streching', value: '../assets/samples/streching.webm' },
-    { name: 'yoga', value: '../assets/samples/yoga.webm' },
-    { name: 'swimwear', value: '../assets/samples/swimwear.webm' },
-  ],
-};
 
 // instance of holistic model
 const holistic = new h.Holistic({ locateFile: (file) => `../assets/holistic/${file}` }); // `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
@@ -83,12 +46,13 @@ const dom = {
   ],
 };
 
-const log = (...msg) => console.log(...msg); // eslint-disable-line no-console
-
 // send request for processing
+let lastRequestTime = -1;
 function sendRequest() {
-  if (dom.input.paused) return;
+  if ((dom.input.readyState < 2) || (dom.input.videoWidth === 0)) return; // not ready
+  if (dom.input.paused && (lastRequestTime === dom.input.currentTime)) return; // no change
   (dom.controls[0] as controls.FPS).tick();
+  lastRequestTime = dom.input.currentTime;
   holistic.send({ image: dom.input });
 }
 
@@ -103,19 +67,41 @@ function onResults(results: h.Results): void {
   requestAnimationFrame(sendRequest);
 }
 
+function resizeOutput() {
+  dom.output2D.width = video.element?.offsetWidth || video.width;
+  dom.output2D.height = video.element?.offsetHeight || video.height;
+  dom.output3D.width = window.innerWidth - dom.output2D.width;
+  initDraw2D(dom.output2D);
+  initDraw3D(dom.output3D, options);
+}
+
 async function startSource(src: string) {
   dom.input.onplay = () => {
-    dom.output2D.width = video.element?.offsetWidth || video.width;
-    dom.output2D.height = video.element?.offsetHeight || video.height;
-    dom.output3D.width = window.innerWidth - dom.output2D.width;
+    log('play', { source: options.activeSource, resolution: [dom.input.width, dom.input.height], time: dom.input.currentTime });
+    resizeOutput();
     sendRequest(); // send initial processing request when play starts
+  };
+  dom.input.onseeked = () => {
+    log('seek', { time: dom.input.currentTime });
+    sendRequest();
   };
   await video.stop();
   await initDraw2D(dom.output2D);
   await initDraw3D(dom.output3D, options);
-  if (src.includes('.webm') || src.includes('.mp4')) await video.start({ element: dom.input, src });
-  else if (src.includes('webcam')) await video.start({ element: dom.input, crop: true, width: window.innerHeight / 2, height: window.innerHeight / 2, src: undefined });
   log('startSource', { source: src });
+  if (src.includes('.webm') || src.includes('.mp4')) await video.start({ element: dom.input, width: window.innerHeight / 2, height: window.innerHeight / 2, src });
+  else if (src.includes('webcam')) await video.start({ element: dom.input, crop: true, width: window.innerHeight / 2, height: window.innerHeight / 2, src: undefined });
+}
+
+async function warmup() {
+  return new Promise((resolve) => {
+    const ms = new Date().getTime();
+    const image = document.createElement('canvas') as HTMLCanvasElement;
+    image.width = 100;
+    image.height = 100;
+    holistic.onResults(() => resolve(new Date().getTime() - ms));
+    holistic.send({ image });
+  });
 }
 
 async function main() {
@@ -125,16 +111,19 @@ async function main() {
     .on((values) => {
       log('setOptions', values, values.source, options.activeSource);
       if (values.source !== options.activeSource) startSource(values.source as string);
-      options = Object.assign(options, values);
+      Object.assign(options, values);
       options.activeSource = values['source'] as string;
       holistic.setOptions(options as h.Options);
       setDraw2dOptions(options);
       setDraw3dOptions(options);
     });
-
+  resizeOutput();
   await holistic.initialize();
   log('holistic', { version: h.VERSION });
+  const time = await warmup();
+  log('holistic', { warmup: time });
   holistic.onResults(onResults); // register callback
+  window.onresize = () => resizeOutput();
 }
 
 window.onload = main;

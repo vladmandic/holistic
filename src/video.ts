@@ -1,4 +1,4 @@
-const log = (...msg) => console.log('video', ...msg); // eslint-disable-line no-console
+import { log } from './util';
 
 export interface WebCamConfig {
   element: string | HTMLVideoElement | undefined,
@@ -86,6 +86,8 @@ export class video { // eslint-disable-line @typescript-eslint/no-extraneous-cla
       else video.element.pause();
     };
     if (video.config?.visible) video.element.style.visibility = video.config?.visible ? 'visible' : 'hidden';
+    video.element.style.width = `${video.config?.width}px`;
+    video.element.style.height = `${video.config?.height}px`;
   }
 
   public static start = async (webcamConfig?: Partial<WebCamConfig>): Promise<void> => {
@@ -100,6 +102,7 @@ export class video { // eslint-disable-line @typescript-eslint/no-extraneous-cla
 
     video.create();
     if (!video.element) return;
+    video.clear();
 
     if (video.config.src) {
       await this.uri();
@@ -107,7 +110,7 @@ export class video { // eslint-disable-line @typescript-eslint/no-extraneous-cla
     }
 
     // set constraints to use
-    const requestedConstraints: DisplayMediaStreamConstraints = { // eslint-disable-line no-undef
+    const requestedConstraints: MediaStreamConstraints = { // eslint-disable-line no-undef
       audio: false,
       video: {
         facingMode: video.config.mode === 'front' ? 'user' : 'environment',
@@ -157,9 +160,21 @@ export class video { // eslint-disable-line @typescript-eslint/no-extraneous-cla
     }
   };
 
+  private static clear = () => {
+    if (!video.element) return;
+    if (video.element.srcObject) {
+      const src = (video.element.srcObject as MediaStream);
+      src.getTracks().forEach((track) => {
+        track.stop();
+        src.removeTrack(track);
+      });
+      video.element.srcObject = null;
+    }
+    if (video.element.src.length > 0) video.element.src = '';
+  };
+
   private static uri = async (): Promise<void> => {
     if (!video.element) return;
-    if (video.element.srcObject) video.element.srcObject = null;
     video.element.src = video.config.src as string;
     const ready = new Promise((resolve) => { // wait until stream is ready
       if (!video.element) resolve(false);

@@ -42,9 +42,16 @@
     },
     "targets": [
       {
+        "name": "inspector",
+        "input": "src/inspector.ts",
+        "output": "dist/inspector.js",
+        "minify": true
+      },
+      {
         "name": "application",
         "input": "src/index.ts",
         "output": "dist/index.js",
+        "external": ["../dist/inspector.js"],
         "minify": false
       }
     ]

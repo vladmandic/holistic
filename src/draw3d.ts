@@ -1,8 +1,9 @@
-import '@babylonjs/inspector';
 import * as B from '@babylonjs/core';
 import * as h from '@mediapipe/holistic';
+import { log } from './util';
 import { Scene } from './scene';
 import { UV468, TRI468 } from './constants';
+import { hideLoader, showLoader } from './loader';
 
 let t: Scene;
 let meshes: Record<string, B.Mesh | B.AbstractMesh> = {};
@@ -50,8 +51,6 @@ class Data {
 }
 const data = new Data();
 
-const log = (...msg) => console.log(...msg); // eslint-disable-line no-console
-
 const vec = (landmark: h.NormalizedLandmark) => new B.Vector3( // convert holistic landmark to scaled babylonjs vector
   (options.scaleX as number) * (landmark?.x || 0),
   (options.scaleY as number) * (1 - (landmark?.y || 0)),
@@ -73,7 +72,6 @@ const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
     meshes[name].renderingGroupId = 1;
-    // meshes[name].scaling = new B.Vector3(1.1 * diameter, 1.1 * diameter, 1.1 * diameter); // make joints slightly larger than bones
   };
 
   data.newPath[parent + desc] = newPath;
@@ -247,10 +245,7 @@ export function setDraw3dOptions(newOptions) {
   if (newOptions.baseRadius !== options.baseRadius) Object.values(meshes).forEach((mesh) => mesh.dispose());
   options = Object.assign(options, newOptions);
   if (!t?.scene) return;
-  if (newOptions.showInspector) t.scene.debugLayer.show({ embedMode: true, overlay: true, showExplorer: true, showInspector: true, handleResize: true, enablePopup: false, enableClose: false });
-  else t.scene.debugLayer.hide();
-  const inspector = document.getElementById('embed-host');
-  if (inspector) inspector.style.cssText = 'left: 0; width: fit-content';
+  t.inspector(newOptions.showInspector);
 }
 
 export function initDraw3D(canvasOutput: HTMLCanvasElement, newOptions) {
@@ -260,11 +255,13 @@ export function initDraw3D(canvasOutput: HTMLCanvasElement, newOptions) {
   setDraw3dOptions(newOptions);
   t.scene.registerBeforeRender(() => performRender());
   log('initScene', t);
-  setInterval(() => log('rendering', { averageFps: t.engine.performanceMonitor.averageFPS }), 5000);
+  showLoader(t);
+  setInterval(() => log('rendering', { averageFps: t.engine.performanceMonitor.averageFPS }), 10000);
   // setInterval(() => t.scene.render(), 200);
 }
 
 export async function draw3D(results: h.Results) {
+  hideLoader();
   createPose(results.poseLandmarks);
   drawTorso(results.poseLandmarks);
   createHand(results.leftHandLandmarks, 'left');

@@ -1,8 +1,6 @@
 import * as B from '@babylonjs/core';
 import * as M from '@babylonjs/materials';
-import '@babylonjs/inspector';
-
-const log = (...msg) => console.log(...msg); // eslint-disable-line no-console
+import { log, sleep } from './util';
 
 export class Scene {
   engine: B.Engine;
@@ -10,7 +8,6 @@ export class Scene {
   scene: B.Scene;
   material: M.PBRCustomMaterial;
   pipeline: B.DefaultRenderingPipeline;
-  highlight: B.HighlightLayer;
   camera: B.ArcRotateCamera;
   light: B.DirectionalLight;
   ambient: B.HemisphericLight;
@@ -19,6 +16,16 @@ export class Scene {
   skybox: B.Mesh | undefined;
   ground: B.Mesh | undefined;
   // highlight: B.HighlightLayer;
+
+  async inspector(showInspector: boolean) {
+    if (!this.scene) return;
+    B.DebugLayer.InspectorURL = '../dist/inspector.js';
+    if (showInspector) this.scene.debugLayer.show({ embedMode: true, overlay: true, showExplorer: true, showInspector: true, handleResize: true, enablePopup: false, enableClose: false });
+    else this.scene.debugLayer.hide();
+    await sleep(500);
+    const inspector = document.getElementById('embed-host');
+    if (inspector) inspector.style.cssText = 'left: 0; width: fit-content';
+  }
 
   constructor(outputCanvas: HTMLCanvasElement) {
     this.canvas = outputCanvas;
@@ -74,6 +81,7 @@ export class Scene {
     if (this.environment.skybox) this.environment.skybox.name = 'skybox';
     if (this.environment.ground?.material) this.environment.ground.material.name = 'ground';
     if (this.environment.skybox?.material) this.environment.skybox.material.name = 'skybox';
+    if (this.environment.ground?.material) this.environment.ground.material['primaryColor'] = B.Color3.FromHexString('#640015');
     // lights & shadows
     this.ambient = new B.HemisphericLight('spheric', new B.Vector3(0, 1, 0), this.scene);
     this.ambient.intensity = 0.5;
@@ -90,7 +98,7 @@ export class Scene {
     this.shadows.depthScale = 60.0;
     this.shadows.transparencyShadow = true;
     // rendering pipeline
-    this.highlight = new B.HighlightLayer('highlight', this.scene);
+    // this.highlight = new B.HighlightLayer('highlight', this.scene);
     this.pipeline = new B.DefaultRenderingPipeline('pipeline', true, this.scene, [this.camera], true);
     this.scene.performancePriority = B.ScenePerformancePriority.BackwardCompatible;
     this.scene.autoClear = false;
