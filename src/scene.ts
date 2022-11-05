@@ -42,9 +42,15 @@ export class Scene {
       failIfMajorPerformanceCaveat: false,
     });
     this.engine.enableOfflineSupport = false;
+    this.engine.renderEvenInBackground = false;
     B.Animation.AllowMatricesInterpolation = true;
     this.scene = new B.Scene(this.engine);
     this.scene.clearCachedVertexData();
+    this.scene.physicsEnabled = false;
+    this.scene.fogEnabled = false;
+    this.scene.audioEnabled = false;
+    this.scene.particlesEnabled = false;
+    this.scene.spritesEnabled = false;
     this.material = new M.PBRCustomMaterial('material', this.scene);
     this.material.metallic = 1.0;
     this.material.roughness = 0.15;
@@ -106,7 +112,15 @@ export class Scene {
     this.engine.runRenderLoop(() => this.scene.render());
     // @ts-ignore
     window.t = this;
-    // @ts-ignore
-    log('babylonjs', { version: B.Engine.Version, engine: this.engine.name, renderer: this.engine._glRenderer.toLowerCase(), gpu: B.GPUParticleSystem.IsSupported }); // eslint-disable-line no-underscore-dangle
+    log('babylonjs', {
+      version: B.Engine.Version,
+      engine: this.engine.name,
+      // @ts-ignore
+      renderer: this.engine._glRenderer.toLowerCase(), // eslint-disable-line no-underscore-dangle
+      // @ts-ignore
+      gl: this.engine._glVersion.toLowerCase(), // eslint-disable-line no-underscore-dangle
+      gpu: B.GPUParticleSystem.IsSupported,
+    });
+    setInterval(() => log('rendering', { averageFps: this.engine.performanceMonitor.averageFPS }), 10000);
   }
 }

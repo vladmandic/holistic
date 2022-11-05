@@ -1,6 +1,9 @@
 export const options = {
   // model options
   useCpuInference: false,
+  cameraFar: 0,
+  cameraNear: 0,
+  cameraVerticalFovDegrees: 0,
   modelComplexity: 0,
   smoothLandmarks: true,
   refineFaceLandmarks: true,
@@ -18,9 +21,10 @@ export const options = {
   renderSurface: true,
   connectHands: true,
   deleteDuplicates: true,
-  fixedRadius: true,
+  fixedRadius: false,
   baseRadius: 0.03,
   lerpAmount: 0,
+  extendPath: 0,
   scaleX: 1,
   scaleY: 1,
   scaleZ: 0.5,
