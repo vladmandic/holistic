@@ -120,15 +120,15 @@ export class Scene {
     this.engine.runRenderLoop(() => this.scene.render());
     // @ts-ignore
     window.t = this;
+    // @ts-ignore
+    window.B = B;
     log('babylonjs', {
       version: B.Engine.Version,
       engine: this.engine.name,
-      // @ts-ignore
-      renderer: this.engine._glRenderer.toLowerCase(), // eslint-disable-line no-underscore-dangle
-      // @ts-ignore
-      gl: this.engine._glVersion.toLowerCase(), // eslint-disable-line no-underscore-dangle
+      renderer: this.engine['_glRenderer']?.toLowerCase(),
+      gl: this.engine['_glVersion']?.toLowerCase(),
       gpu: B.GPUParticleSystem.IsSupported,
     });
-    setInterval(() => log('rendering', { averageFps: this.engine.performanceMonitor.averageFPS }), 1000);
+    setInterval(() => log('rendering', { averageFps: this.engine.performanceMonitor.averageFPS }), 10000);
   }
 }

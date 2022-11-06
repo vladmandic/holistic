@@ -12,6 +12,7 @@ export const options = {
   minTrackingConfidence: 0.3,
   // render options
   showInspector: false,
+  boundingBoxes: false,
   renderFace: true,
   connectFace: true,
   smoothFace: false,

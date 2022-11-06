@@ -4,6 +4,7 @@ import { log } from './util';
 import { Scene } from './scene';
 import { UV468, TRI468 } from './constants';
 import { hideLoader, showLoader } from './loader';
+import { initEvents } from './events';
 import type { Options } from './options';
 
 let options: Options;
@@ -45,13 +46,16 @@ class Data {
       radius = this.radius[key];
       const path = options.lerpAmount > 0 ? this.path[key] : this.newPath[key];
       B.MeshBuilder.CreateTube(key, { path, radiusFunction, updatable: true, instance: meshes[key] as B.Mesh }, t.scene);
+      meshes[key].showBoundingBox = options.boundingBoxes;
     }
     for (const key of Object.keys(this.newPos)) {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
       meshes[key].position = options.lerpAmount > 0 ? this.pos[key] : this.newPos[key];
+      meshes[key].showBoundingBox = options.boundingBoxes;
       const scale = options.baseRadius / this.radius[key];
       if (key !== 'face') meshes[key].scaling.multiplyInPlace(new B.Vector3(scale, scale, scale));
     }
+    if (meshes['pose']) meshes['pose'].showBoundingBox = options.boundingBoxes;
     this.drawTime = new Date().getTime();
   }
 }
@@ -69,7 +73,7 @@ const drawPath = (parent: string, desc: string, path: B.Vector3[], visibility: n
     meshes[name] = B.MeshBuilder.CreateTube(name, { path, radius: data.radius[name], updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
-    t.shadows.addShadowCaster(meshes[parent + desc], false);
+    t.shadows.addShadowCaster(meshes[name], false);
   };
   const createJoint = (name: string) => {
     meshes[name] = B.MeshBuilder.CreateSphere(name, { diameter }, t.scene); // diameter is fixed and we change scale later
@@ -79,11 +83,8 @@ const drawPath = (parent: string, desc: string, path: B.Vector3[], visibility: n
     meshes[name].renderOverlay = true;
     meshes[name].overlayColor = B.Color3.FromHexString('#000');
   };
-
-  // const path = data.path[parent + desc] || data.newPath[parent + desc];
-  const boneName = parent + desc;
-  const jointName = parent + desc + '-joint';
-
+  const boneName = desc;
+  const jointName = desc + '-joint';
   if (!meshes[boneName] || meshes[boneName].isDisposed()) { // pose part seen for the first time
     createBone(boneName);
     createJoint(jointName);
@@ -129,15 +130,24 @@ async function drawTorso(result: h.NormalizedLandmarkList) {
   drawRibbon('pose', 'torso', verticals, visibility);
 }
 
+const poseName: string[] = [];
+function buildPoseNames() {
+  const landmarks = Object.keys(h.POSE_LANDMARKS);
+  for (let i = 0; i < h.POSE_CONNECTIONS.length; i++) {
+    poseName.push(landmarks[h.POSE_CONNECTIONS[i]?.[0]].toLowerCase() + '-' + landmarks[h.POSE_CONNECTIONS[i]?.[1]].toLowerCase());
+  }
+}
+
 async function createPose(result: h.NormalizedLandmarkList) {
   for (let i = 0; i < h.POSE_CONNECTIONS.length; i++) {
+    if (!result?.[h.POSE_CONNECTIONS[i]?.[0]] || !result?.[h.POSE_CONNECTIONS[i]?.[1]]) continue;
     const v0 = result?.[h.POSE_CONNECTIONS[i]?.[0]];
     const v1 = result?.[h.POSE_CONNECTIONS[i]?.[1]];
     const pathL = [vec(v0), vec(v1)];
     const pathR = [vec(v1), vec(v0)];
     const visibility = Math.min(v0?.visibility || 0, v1?.visibility || 0);
-    drawPath('pose', `-${i}-l`, pathL, visibility, options.baseRadius);
-    drawPath('pose', `-${i}-r`, pathR, visibility, options.baseRadius);
+    drawPath('pose', `${poseName[i]}-l`, pathL, visibility, options.baseRadius);
+    drawPath('pose', `${poseName[i]}-r`, pathR, visibility, options.baseRadius);
   }
   const parent = meshes['pose'];
   const childMeshes = parent.getChildMeshes();
@@ -169,8 +179,8 @@ async function createHand(result: h.NormalizedLandmarkList, which: 'left' | 'rig
     const pathL = [vec(v0), vec(v1)];
     const pathR = [vec(v1), vec(v0)];
     const visibility = (v0 && v1 && options.renderHands) ? 1 : 0;
-    drawPath(`hand-${which}`, `-${i}-l`, pathL, visibility, options.baseRadius / 4);
-    drawPath(`hand-${which}`, `-${i}-r`, pathR, visibility, options.baseRadius / 4);
+    drawPath(`hand-${which}`, `hand-${i}-l`, pathL, visibility, options.baseRadius / 4);
+    drawPath(`hand-${which}`, `hand-${i}-r`, pathR, visibility, options.baseRadius / 4);
   }
 }
 
@@ -230,9 +240,9 @@ async function repositionHands(result: h.NormalizedLandmarkList) {
 
 async function repositionFace(result: h.NormalizedLandmarkList) {
   const nose = result?.[h.POSE_LANDMARKS.NOSE];
-  if (!meshes['face'] || !meshes['pose-9-l'] || !nose) return;
+  if (!meshes['face'] || !meshes['left_shoulder-right_shoulder-l'] || !nose) return;
   const noseVec = vec(nose);
-  const centerShouldersVec = meshes['pose-9-l'].getBoundingInfo().boundingBox.center;
+  const centerShouldersVec = meshes['left_shoulder-right_shoulder-l'].getBoundingInfo().boundingBox.center;
   noseVec.addInPlace(centerShouldersVec);
   noseVec.divideInPlace(new B.Vector3(2, 2, 4));
   data.newPos['face'] = new B.Vector3(0, 0, options.connectFace ? noseVec.z : 0); // reposition face
@@ -268,6 +278,8 @@ export function initDraw3D(canvasOutput: HTMLCanvasElement, newOptions) {
   t.scene.registerBeforeRender(() => performRender());
   log('initScene', t);
   showLoader(t);
+  initEvents(t);
+  if (poseName.length === 0) buildPoseNames();
   // setInterval(() => t.scene.render(), 200);
 }
 
