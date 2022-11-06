@@ -4,16 +4,16 @@ import { log } from './util';
 import { Scene } from './scene';
 import { UV468, TRI468 } from './constants';
 import { hideLoader, showLoader } from './loader';
+import type { Options } from './options';
 
+let options: Options;
 let t: Scene;
 let meshes: Record<string, B.Mesh | B.AbstractMesh> = {};
 let faceVertexData: B.VertexData | undefined;
 let previousSmooth = false;
+let radius = 0.01;
 
-let options: Record<string, boolean | number> = {};
-
-let activeRadius = 0.01;
-const radiusFunction = (index, distance) => (options.fixedRadius ? (index * activeRadius) : (2 * distance * activeRadius) + 0.01);
+const radiusFunction = (index, distance) => (options.fixedRadius ? (index * radius) : (2 * distance * radius) + 0.01);
 
 class Data {
   pos: Record<string, B.Vector3> = {};
@@ -21,62 +21,57 @@ class Data {
   path: Record<string, B.Vector3[]> = {};
   newPath: Record<string, B.Vector3[]> = {};
   radius: Record<string, number> = {};
-  lerp = -1;
+  updateTime = 0;
+  drawTime = 0;
 
   interpolate() {
-    if (this.lerp !== options.lerpAmount) {
-      this.pos = options.lerpAmount > 0 ? {} : this.newPos;
-      this.path = options.lerpAmount > 0 ? {} : this.newPath;
-      this.lerp = options.lerpAmount as number;
+    if (options.lerpAmount === 0) return;
+    for (const key of Object.keys(this.newPos)) {
+      if (!this.pos[key]) this.pos[key] = this.newPos[key].clone();
+      this.pos[key] = B.Vector3.Lerp(this.pos[key], this.newPos[key], options.lerpAmount);
     }
-    if (options.lerpAmount === 0) {
-      this.pos = this.newPos;
-      this.path = this.newPath;
-    } else {
-      for (const key of Object.keys(this.newPos)) {
-        if (!this.pos[key]) this.pos[key] = this.newPos[key].clone();
-        this.pos[key] = B.Vector3.Lerp(this.pos[key], this.newPos[key], this.lerp);
-      }
-      for (const key of Object.keys(this.newPath)) {
-        if (!this.path[key]) this.path[key] = this.newPath[key].map((pos) => pos.clone());
-        for (let i = 0; i < this.newPath[key].length; i++) {
-          this.path[key][i] = B.Vector3.Lerp(this.path[key][i], this.newPath[key][i], this.lerp);
-        }
+    for (const key of Object.keys(this.newPath)) {
+      if (!this.path[key]) this.path[key] = this.newPath[key].map((pos) => pos.clone());
+      for (let i = 0; i < this.newPath[key].length; i++) {
+        this.path[key][i] = B.Vector3.Lerp(this.path[key][i], this.newPath[key][i], options.lerpAmount);
       }
     }
   }
 
   draw() {
-    for (const key of Object.keys(this.path)) {
+    if (this.updateTime - this.drawTime < -1000) return; // no draw needed if results are older than 1sec
+    for (const key of Object.keys(this.newPath)) {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
-      activeRadius = this.radius[key];
-      B.MeshBuilder.CreateTube(key, { path: this.path[key], radiusFunction, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[key] as B.Mesh }, t.scene);
+      radius = this.radius[key];
+      const path = options.lerpAmount > 0 ? this.path[key] : this.newPath[key];
+      B.MeshBuilder.CreateTube(key, { path, radiusFunction, updatable: true, instance: meshes[key] as B.Mesh }, t.scene);
     }
-    for (const key of Object.keys(this.pos)) {
+    for (const key of Object.keys(this.newPos)) {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
-      meshes[key].position = this.pos[key];
+      meshes[key].position = options.lerpAmount > 0 ? this.pos[key] : this.newPos[key];
+      const scale = options.baseRadius / this.radius[key];
+      if (key !== 'face') meshes[key].scaling.multiplyInPlace(new B.Vector3(scale, scale, scale));
     }
+    this.drawTime = new Date().getTime();
   }
 }
 const data = new Data();
 
 const vec = (landmark: h.NormalizedLandmark) => new B.Vector3( // convert holistic landmark to scaled babylonjs vector
-  (options.scaleX as number) * (landmark?.x || 0),
-  (options.scaleY as number) * (1 - (landmark?.y || 0)),
-  (options.scaleZ as number) * (landmark?.z || 0),
+  options.scaleX * (landmark?.x || 0),
+  options.scaleY * (1 - (landmark?.y || 0)),
+  options.scaleZ * (landmark?.z || 0),
 );
 
-const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility: number, diameter: number) => {
+const drawPath = (parent: string, desc: string, path: B.Vector3[], visibility: number, diameter: number) => {
   if (!meshes[parent] || meshes[parent].isDisposed()) meshes[parent] = new B.AbstractMesh(parent, t.scene);
   const createBone = (name: string) => {
-    data.radius[name] = diameter / 2;
-    meshes[name] = B.MeshBuilder.CreateTube(name, { path: newPath, radius: data.radius[name], updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
+    meshes[name] = B.MeshBuilder.CreateTube(name, { path, radius: data.radius[name], updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
     t.shadows.addShadowCaster(meshes[parent + desc], false);
   };
   const createJoint = (name: string) => {
-    data.radius[name] = diameter;
     meshes[name] = B.MeshBuilder.CreateSphere(name, { diameter }, t.scene); // diameter is fixed and we change scale later
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
@@ -85,8 +80,7 @@ const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility
     meshes[name].overlayColor = B.Color3.FromHexString('#000');
   };
 
-  data.newPath[parent + desc] = newPath;
-  const path = data.path[parent + desc] || data.newPath[parent + desc];
+  // const path = data.path[parent + desc] || data.newPath[parent + desc];
   const boneName = parent + desc;
   const jointName = parent + desc + '-joint';
 
@@ -98,7 +92,10 @@ const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility
   meshes[boneName].setEnabled(options.renderBones ? (visibility > 0) : false);
   meshes[jointName].visibility = visibility;
   meshes[jointName].setEnabled(options.renderJoints ? (visibility > 0) : false);
-  data.newPos[jointName] = path[0];
+  data.radius[boneName] = diameter / 2;
+  data.newPath[boneName] = path;
+  data.radius[jointName] = diameter;
+  data.newPos[jointName] = data.newPath[boneName][0];
 };
 
 async function drawRibbon(parent: string, desc: string, path: B.Vector3[][], visibility: number) {
@@ -106,7 +103,7 @@ async function drawRibbon(parent: string, desc: string, path: B.Vector3[][], vis
   const pathArray = path.map((vertical) => {
     const double = vertical.slice();
     for (let i = 0; i < vertical.length; i++) double.push(vertical[i].clone());
-    for (let i = 0; i < double.length; i++) double[i].addInPlaceFromFloats(0, 0, (i < vertical.length ? 1 : -1) * (options.baseRadius as number / 2));
+    for (let i = 0; i < double.length; i++) double[i].addInPlaceFromFloats(0, 0, (i < vertical.length ? 1 : -1) * options.baseRadius / 2);
     return double;
   });
   const name = parent + '-' + desc;
@@ -139,8 +136,8 @@ async function createPose(result: h.NormalizedLandmarkList) {
     const pathL = [vec(v0), vec(v1)];
     const pathR = [vec(v1), vec(v0)];
     const visibility = Math.min(v0?.visibility || 0, v1?.visibility || 0);
-    drawPath('pose', `-${i}-l`, pathL, visibility, options.baseRadius as number);
-    drawPath('pose', `-${i}-r`, pathR, visibility, options.baseRadius as number);
+    drawPath('pose', `-${i}-l`, pathL, visibility, options.baseRadius);
+    drawPath('pose', `-${i}-r`, pathR, visibility, options.baseRadius);
   }
   const parent = meshes['pose'];
   const childMeshes = parent.getChildMeshes();
@@ -172,8 +169,8 @@ async function createHand(result: h.NormalizedLandmarkList, which: 'left' | 'rig
     const pathL = [vec(v0), vec(v1)];
     const pathR = [vec(v1), vec(v0)];
     const visibility = (v0 && v1 && options.renderHands) ? 1 : 0;
-    drawPath(`hand-${which}`, `-${i}-l`, pathL, visibility, options.baseRadius as number / 4);
-    drawPath(`hand-${which}`, `-${i}-r`, pathR, visibility, options.baseRadius as number / 4);
+    drawPath(`hand-${which}`, `-${i}-l`, pathL, visibility, options.baseRadius / 4);
+    drawPath(`hand-${which}`, `-${i}-r`, pathR, visibility, options.baseRadius / 4);
   }
 }
 
@@ -184,7 +181,7 @@ async function drawFace(result: h.NormalizedLandmarkList) {
   }
   if (previousSmooth !== options.smoothFace) {
     if (meshes.face && !meshes.face.isDisposed()) meshes.face.dispose();
-    previousSmooth = options.smoothFace as boolean;
+    previousSmooth = options.smoothFace;
   }
   if (!meshes.face || meshes.face.isDisposed()) { // create new face
     meshes.face = new B.Mesh('face', t.scene);
@@ -197,9 +194,9 @@ async function drawFace(result: h.NormalizedLandmarkList) {
 
   const positions = new Float32Array(3 * 468);
   for (let i = 0; i < 468; i++) { // flatten and invert-y
-    positions[3 * i + 0] = (options.scaleX as number) * result[i].x; // x
-    positions[3 * i + 1] = (options.scaleY as number) * (1 - result[i].y); // y
-    positions[3 * i + 2] = (options.scaleZ as number) * 2 * result[i].z; // z
+    positions[3 * i + 0] = options.scaleX * result[i].x; // x
+    positions[3 * i + 1] = options.scaleY * (1 - result[i].y); // y
+    positions[3 * i + 2] = options.scaleZ * 2 * result[i].z; // z
   }
 
   // create vertex buffer if on first access
@@ -247,8 +244,8 @@ async function repositionFace(result: h.NormalizedLandmarkList) {
       t.camera.framingBehavior?.zoomOnBoundingInfo(bounds.boundingBox.minimumWorld, bounds.boundingBox.maximumWorld);
     }
   }
-  drawPath('neck', 'line-l', [noseVec, centerShouldersVec], 1, options.baseRadius as number); // draw neck
-  drawPath('neck', 'line-r', [centerShouldersVec, noseVec], 1, options.baseRadius as number); // draw neck
+  drawPath('neck', 'line-l', [noseVec, centerShouldersVec], 1, options.baseRadius); // draw neck
+  drawPath('neck', 'line-r', [centerShouldersVec, noseVec], 1, options.baseRadius); // draw neck
 }
 
 function performRender() {
@@ -257,8 +254,8 @@ function performRender() {
 }
 
 export function setDraw3dOptions(newOptions) {
-  if (newOptions.baseRadius !== options.baseRadius) Object.values(meshes).forEach((mesh) => mesh.dispose());
-  options = Object.assign(options, newOptions);
+  if (options && (newOptions.baseRadius !== options.baseRadius)) Object.values(meshes).forEach((mesh) => mesh.dispose());
+  options = newOptions;
   if (!t?.scene) return;
   t.inspector(newOptions.showInspector);
 }
@@ -285,4 +282,5 @@ export async function draw3D(results: h.Results) {
   repositionHands(results.poseLandmarks);
   drawFace(results.faceLandmarks);
   repositionFace(results.poseLandmarks);
+  data.updateTime = new Date().getTime();
 }

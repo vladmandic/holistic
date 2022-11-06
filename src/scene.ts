@@ -29,7 +29,7 @@ export class Scene {
 
   constructor(outputCanvas: HTMLCanvasElement) {
     this.canvas = outputCanvas;
-    // engine & scene
+    // engine
     this.engine = new B.Engine(this.canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
@@ -42,8 +42,9 @@ export class Scene {
       failIfMajorPerformanceCaveat: false,
     });
     this.engine.enableOfflineSupport = false;
-    this.engine.renderEvenInBackground = false;
+    // this.engine.renderEvenInBackground = false;
     B.Animation.AllowMatricesInterpolation = true;
+    // scene
     this.scene = new B.Scene(this.engine);
     this.scene.clearCachedVertexData();
     this.scene.physicsEnabled = false;
@@ -51,6 +52,10 @@ export class Scene {
     this.scene.audioEnabled = false;
     this.scene.particlesEnabled = false;
     this.scene.spritesEnabled = false;
+    this.scene.performancePriority = B.ScenePerformancePriority.BackwardCompatible;
+    this.scene.skipFrustumClipping = true;
+    this.scene.autoClear = false;
+    // material
     this.material = new M.PBRCustomMaterial('material', this.scene);
     this.material.metallic = 1.0;
     this.material.roughness = 0.20;
@@ -59,9 +64,12 @@ export class Scene {
     this.material.albedoColor = B.Color3.FromHexString('#FFF4B8');
     this.material.useRadianceOcclusion = false;
     this.material.directIntensity = 0;
-    this.material.needDepthPrePass = true;
+    this.material.specularIntensity = 0;
+    this.material.emissiveIntensity = 0;
     this.material.backFaceCulling = false;
-    // this.materialJoint.freeze();
+    this.material.separateCullingPass = true;
+    this.material.usePhysicalLightFalloff = false;
+    this.material.freeze();
     // camera
     this.camera = new B.ArcRotateCamera('camera', 0, 0, 1, new B.Vector3(1, 0, 0), this.scene);
     this.camera.attachControl(this.canvas, false);
@@ -106,10 +114,8 @@ export class Scene {
     this.shadows.depthScale = 60.0;
     this.shadows.transparencyShadow = true;
     // rendering pipeline
-    // this.highlight = new B.HighlightLayer('highlight', this.scene);
-    this.pipeline = new B.DefaultRenderingPipeline('pipeline', true, this.scene, [this.camera], true);
-    this.scene.performancePriority = B.ScenePerformancePriority.BackwardCompatible;
-    this.scene.autoClear = false;
+    this.pipeline = new B.DefaultRenderingPipeline('pipeline', false, this.scene, [this.camera], true);
+    this.pipeline.imageProcessing.toneMappingEnabled = false;
     // start scene
     this.engine.runRenderLoop(() => this.scene.render());
     // @ts-ignore
@@ -123,6 +129,6 @@ export class Scene {
       gl: this.engine._glVersion.toLowerCase(), // eslint-disable-line no-underscore-dangle
       gpu: B.GPUParticleSystem.IsSupported,
     });
-    setInterval(() => log('rendering', { averageFps: this.engine.performanceMonitor.averageFPS }), 10000);
+    setInterval(() => log('rendering', { averageFps: this.engine.performanceMonitor.averageFPS }), 1000);
   }
 }

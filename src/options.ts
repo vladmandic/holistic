@@ -5,8 +5,8 @@ export const options = {
   cameraNear: 0,
   cameraVerticalFovDegrees: 0,
   modelComplexity: 0,
-  smoothLandmarks: true,
-  refineFaceLandmarks: true,
+  smoothLandmarks: false,
+  refineFaceLandmarks: false,
   enableFaceGeometry: false,
   minDetectionConfidence: 0.1,
   minTrackingConfidence: 0.3,
@@ -22,12 +22,12 @@ export const options = {
   connectHands: true,
   deleteDuplicates: true,
   fixedRadius: true,
-  baseRadius: 0.03,
+  baseRadius: 0.04,
   lerpAmount: 0,
   extendPath: 0,
   scaleX: 1,
   scaleY: 1,
-  scaleZ: 0.5,
+  scaleZ: 0.35,
   continousFocus: true,
   // sources
   activeSource: 'none',
@@ -40,3 +40,5 @@ export const options = {
     { name: 'swimwear', value: '../assets/samples/swimwear.webm' },
   ],
 };
+
+export type Options = typeof options;
