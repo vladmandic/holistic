@@ -17,6 +17,7 @@ export async function showLoader(scene: Scene) {
     mesh.scaling = new B.Vector3(0.5, 0.5, 0.5);
     mesh.position = new B.Vector3(0.5, 0.52, 0);
     mesh.rotation = new B.Vector3(-Math.PI / 2, Math.PI / 2, 0);
+    if (mesh.material) mesh.material.dispose();
     mesh.material = scene.material;
     scene.shadows.addShadowCaster(mesh, false); // add shadow to new tube
   }

@@ -53,12 +53,14 @@ export class Scene {
     this.scene.spritesEnabled = false;
     this.material = new M.PBRCustomMaterial('material', this.scene);
     this.material.metallic = 1.0;
-    this.material.roughness = 0.15;
+    this.material.roughness = 0.20;
     this.material.alpha = 1.0;
     this.material.metallicF0Factor = 0;
     this.material.albedoColor = B.Color3.FromHexString('#FFF4B8');
     this.material.useRadianceOcclusion = false;
     this.material.directIntensity = 0;
+    this.material.needDepthPrePass = true;
+    this.material.backFaceCulling = false;
     // this.materialJoint.freeze();
     // camera
     this.camera = new B.ArcRotateCamera('camera', 0, 0, 1, new B.Vector3(1, 0, 0), this.scene);

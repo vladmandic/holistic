@@ -21,7 +21,7 @@ export const options = {
   renderSurface: true,
   connectHands: true,
   deleteDuplicates: true,
-  fixedRadius: false,
+  fixedRadius: true,
   baseRadius: 0.03,
   lerpAmount: 0,
   extendPath: 0,

@@ -12,14 +12,15 @@ let previousSmooth = false;
 
 let options: Record<string, boolean | number> = {};
 
-const radiusFunction = (index, distance) => (options.fixedRadius ? 0.5 * index * (options.baseRadius as number) : 0.005 + 3 * distance * (options.baseRadius as number) / 2);
+let activeRadius = 0.01;
+const radiusFunction = (index, distance) => (options.fixedRadius ? (index * activeRadius) : (2 * distance * activeRadius) + 0.01);
 
 class Data {
   pos: Record<string, B.Vector3> = {};
   newPos: Record<string, B.Vector3> = {};
   path: Record<string, B.Vector3[]> = {};
   newPath: Record<string, B.Vector3[]> = {};
-  interpolatedPath: Record<string, B.Vector3[]> = {};
+  radius: Record<string, number> = {};
   lerp = -1;
 
   interpolate() {
@@ -48,7 +49,8 @@ class Data {
   draw() {
     for (const key of Object.keys(this.path)) {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
-      meshes[key] = B.MeshBuilder.CreateTube(key, { path: this.path[key], radiusFunction, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[key] as B.Mesh }, t.scene);
+      activeRadius = this.radius[key];
+      B.MeshBuilder.CreateTube(key, { path: this.path[key], radiusFunction, updatable: true, cap: 0, sideOrientation: B.Mesh.DOUBLESIDE, instance: meshes[key] as B.Mesh }, t.scene);
     }
     for (const key of Object.keys(this.pos)) {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
@@ -67,34 +69,36 @@ const vec = (landmark: h.NormalizedLandmark) => new B.Vector3( // convert holist
 const drawPath = (parent: string, desc: string, newPath: B.Vector3[], visibility: number, diameter: number) => {
   if (!meshes[parent] || meshes[parent].isDisposed()) meshes[parent] = new B.AbstractMesh(parent, t.scene);
   const createBone = (name: string) => {
-    meshes[name] = B.MeshBuilder.CreateTube(name, { path: newPath, radius: diameter / 2, updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
-    // meshes[name] = B.MeshBuilder.CreateTube(name, { path: pathExtend(newPath), radius: diameter / 2, updatable: true, cap: 0, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
+    data.radius[name] = diameter / 2;
+    meshes[name] = B.MeshBuilder.CreateTube(name, { path: newPath, radius: data.radius[name], updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
-    t.shadows.addShadowCaster(meshes[parent + desc], false); // add shadow to new tube
+    t.shadows.addShadowCaster(meshes[parent + desc], false);
   };
   const createJoint = (name: string) => {
-    meshes[name] = B.MeshBuilder.CreateSphere(name, { diameter }, t.scene); // rounded edge for path // diameter is fixed and we change scale later
+    data.radius[name] = diameter;
+    meshes[name] = B.MeshBuilder.CreateSphere(name, { diameter }, t.scene); // diameter is fixed and we change scale later
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
-    meshes[name].renderingGroupId = 1;
+    meshes[name].renderingGroupId = 0;
+    meshes[name].renderOverlay = true;
+    meshes[name].overlayColor = B.Color3.FromHexString('#000');
   };
 
   data.newPath[parent + desc] = newPath;
   const path = data.path[parent + desc] || data.newPath[parent + desc];
+  const boneName = parent + desc;
+  const jointName = parent + desc + '-joint';
 
-  if (!meshes[parent + desc] || meshes[parent + desc].isDisposed()) { // pose part seen for the first time
-    createBone(parent + desc);
-    for (let i = 0; i < path.length; i++) createJoint(parent + desc + i);
+  if (!meshes[boneName] || meshes[boneName].isDisposed()) { // pose part seen for the first time
+    createBone(boneName);
+    createJoint(jointName);
   }
-  meshes[parent + desc].visibility = visibility;
-  meshes[parent + desc].setEnabled(options.renderJoints ? (visibility > 0) : false);
-  for (let i = 0; i < path.length; i++) { // update path endpoints
-    const jointName = parent + desc + i;
-    data.newPos[jointName] = path[i];
-    meshes[jointName].visibility = visibility;
-    meshes[jointName].setEnabled(options.renderJoints ? (visibility > 0) : false);
-  }
+  meshes[boneName].visibility = visibility;
+  meshes[boneName].setEnabled(options.renderBones ? (visibility > 0) : false);
+  meshes[jointName].visibility = visibility;
+  meshes[jointName].setEnabled(options.renderJoints ? (visibility > 0) : false);
+  data.newPos[jointName] = path[0];
 };
 
 async function drawRibbon(parent: string, desc: string, path: B.Vector3[][], visibility: number) {
@@ -110,10 +114,11 @@ async function drawRibbon(parent: string, desc: string, path: B.Vector3[][], vis
     meshes[name] = B.MeshBuilder.CreateRibbon(name, { pathArray, closeArray: false, closePath: false, updatable: true, sideOrientation: B.Mesh.FRONTSIDE }, t.scene);
     meshes[name].parent = meshes[parent];
     meshes[name].material = t.material;
-    meshes[name].receiveShadows = true;
+    meshes[name].receiveShadows = false;
+    t.shadows.addShadowCaster(meshes[name], false);
     faceVertexData = undefined;
   }
-  meshes[name] = B.MeshBuilder.CreateRibbon(name, { pathArray, closeArray: false, closePath: false, updatable: true, sideOrientation: B.Mesh.FRONTSIDE, instance: meshes[name] as B.Mesh }, t.scene);
+  meshes[name] = B.MeshBuilder.CreateRibbon(name, { pathArray, updatable: true, instance: meshes[name] as B.Mesh }, t.scene);
   meshes[name].visibility = visibility;
   meshes[name].setEnabled(options.renderSurface ? (visibility > 0) : false);
 }
