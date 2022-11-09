@@ -1,6 +1,6 @@
 # Holistic
 
-Holisting end-to-end detection and visualization of of body pose, hands with fingers, and face mesh  
+Holistic end-to-end video detection and visualization of **body pose**, **hands with fingers**, and **face mesh**  
 Provided as both **2D overlay** and fully reconstructed **3D scene**  
 
 - [**[Live link]**](https://vladmandic.github.io/holistic/public/index.html)
