@@ -120,7 +120,7 @@ async function main() {
     });
   resizeOutput();
   await holistic.initialize();
-  log('holistic', { version: h.VERSION, variables: holistic['g']['g']['options'] });
+  log('holistic', { version: h.VERSION, variables: holistic['h']['l'] });
   const time = await warmup();
   log('holistic', { warmup: time });
   holistic.onResults(onResults); // register callback

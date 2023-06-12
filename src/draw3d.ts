@@ -52,7 +52,7 @@ class Data {
       if (!meshes[key] || meshes[key].isDisposed()) continue;
       meshes[key].position = options.lerpAmount > 0 ? this.pos[key] : this.newPos[key];
       meshes[key].showBoundingBox = options.boundingBoxes;
-      const scale = options.baseRadius / this.radius[key];
+      const scale = this.radius[key] ? options.baseRadius / this.radius[key] : 1;
       if (key !== 'face') meshes[key].scaling.multiplyInPlace(new B.Vector3(scale, scale, scale));
     }
     if (meshes['pose']) meshes['pose'].showBoundingBox = options.boundingBoxes;
@@ -70,6 +70,7 @@ const vec = (landmark: h.NormalizedLandmark) => new B.Vector3( // convert holist
 const drawPath = (parent: string, desc: string, path: B.Vector3[], visibility: number, diameter: number) => {
   if (!meshes[parent] || meshes[parent].isDisposed()) meshes[parent] = new B.AbstractMesh(parent, t.scene);
   const createBone = (name: string) => {
+    console.log(parent, name);
     meshes[name] = B.MeshBuilder.CreateTube(name, { path, radius: data.radius[name], updatable: true, cap: 1, sideOrientation: B.Mesh.DEFAULTSIDE }, t.scene); // create new tube
     meshes[name].material = t.material;
     meshes[name].parent = meshes[parent];
@@ -176,11 +177,9 @@ async function createHand(result: h.NormalizedLandmarkList, which: 'left' | 'rig
   for (let i = 0; i < h.HAND_CONNECTIONS.length; i++) {
     const v0 = result?.[h.HAND_CONNECTIONS[i]?.[0]];
     const v1 = result?.[h.HAND_CONNECTIONS[i]?.[1]];
-    const pathL = [vec(v0), vec(v1)];
-    const pathR = [vec(v1), vec(v0)];
+    const path = [vec(v0), vec(v1)];
     const visibility = (v0 && v1 && options.renderHands) ? 1 : 0;
-    drawPath(`hand-${which}`, `hand-${i}-l`, pathL, visibility, options.baseRadius / 4);
-    drawPath(`hand-${which}`, `hand-${i}-r`, pathR, visibility, options.baseRadius / 4);
+    drawPath(`hand-${which}`, `hand-${i}-${which}`, path, visibility, options.baseRadius / 4);
   }
 }
 

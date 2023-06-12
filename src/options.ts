@@ -23,7 +23,7 @@ export const options = {
   connectHands: true,
   deleteDuplicates: true,
   fixedRadius: true,
-  baseRadius: 0.04,
+  baseRadius: 0.02,
   lerpAmount: 0,
   extendPath: 0,
   scaleX: 1,
